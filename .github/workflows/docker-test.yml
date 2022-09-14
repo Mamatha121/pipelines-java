@@ -21,7 +21,7 @@ env:
 jobs:
   nodeVerionsWithCypress:
       name: "Node Linux"
-      runs-on: ${{ poolNameLnx }}
+      runs-on: $poolNameLnx
       strategy:
         matrix:
           nodeVerionsWithCypress: [12, 14]
@@ -32,36 +32,36 @@ jobs:
         if: ${{ github.ref != 'ref/heads/master' }}
         uses: ./.az/build-steps.yml
         with:
-          dtrConnectionName: ${{ dtrConnectionName }}
-          dtrRepository: ${{ dtrRepository }}
+          dtrConnectionName: $dtrConnectionName
+          dtrRepository: $dtrRepository
           tagSuffix: '-dev'
-          dockerBuildArgs: ${{ dockerBuildArgs }}
+          dockerBuildArgs: $dockerBuildArgs
           cypressVersions: ${{ matrix.nodeVerionsWithCypress }}
-          nodeVersion: ${{ nodeVersion }}
+          nodeVersion: $nodeVersion
        
          
       - name: master build-steps.yml
         if: ${{ github.ref == 'ref/heads/master' }}
         uses: ./.az/build-steps.yml
         with:
-          dtrConnectionName: ${{ dtrConnectionName }}
-          dtrRepository: ${{ dtrRepository }}
-          dockerBuildArgs: ${{ dockerBuildArgs }}
+          dtrConnectionName: $dtrConnectionName
+          dtrRepository: $dtrRepository
+          dockerBuildArgs: $dockerBuildArgs
           cypressVersions: ${{ github.event.inputs.cypressVersions }}
-          nodeVersion: ${{ nodeVersion }}
+          nodeVersion: $nodeVersion
 
       - name: push-steps.yml
         if: ${{ github.ref == 'ref/heads/master' }}
         uses: ./.az/push-steps.yml
         with:
-            dtrConnectionName: ${{ dtrConnectionName }}
-            dtrRepository: ${{ dtrRepository }}
+            dtrConnectionName: $dtrConnectionName
+            dtrRepository: $dtrRepository
             cypressVersions: ${{ github.event.inputs.cypressVersions }}
-            nodeVersion: ${{ nodeVersion }}
+            nodeVersion: $nodeVersion
 
   nodeVerionsWithoutCypress:
       name: "Node linux"
-      runs-on: ${{ poolNameLnx }}
+      runs-on: $poolNameLnx
       strategy:
         matrix:
           nodeVerionsWithoutCypress: [16]
@@ -73,31 +73,28 @@ jobs:
         if: ${{ github.ref != 'ref/heads/master' }}
         uses: ./.az/build-steps.yml
         with:
-          dtrConnectionName: ${{ dtrConnectionName }}
-          dtrRepository: ${{ dtrRepository }}
+          dtrConnectionName: $dtrConnectionName
+          dtrRepository: $dtrRepository
           tagSuffix: '-dev'
-          dockerBuildArgs: ${{ dockerBuildArgs }}
-          nodeVersion: ${{ nodeVersion }}
+          dockerBuildArgs: $dockerBuildArgs
+          nodeVersion: $nodeVersion
          
       - name: master push-steps.yml
         if: ${{ github.ref == 'ref/heads/master' }}
         uses: ./.az/build-steps.yml
         with:
-          dtrConnectionName: ${{ dtrConnectionName }}
-          dtrRepository: ${{ dtrRepository }}
-          dockerBuildArgs: ${{ dockerBuildArgs }}
-          nodeVersion: ${{ nodeVersion }}
+          dtrConnectionName: $dtrConnectionName
+          dtrRepository: $dtrRepository
+          dockerBuildArgs: $dockerBuildArgs
+          nodeVersion: $nodeVersion
          
       - name: push-steps.yml
         if: ${{ github.ref == 'ref/heads/master' }}
         uses: ./.az/push-steps.yml
         with:
-           dtrConnectionName: ${{ dtrConnectionName }}
-           dtrRepository: ${{ dtrRepository }}
-           nodeVersion: ${{ nodeVersion }}
-           
-           
-           
+           dtrConnectionName: $dtrConnectionName
+           dtrRepository: $dtrRepository
+           nodeVersion: $nodeVersion
            dtrConnectionName: ${{ env.dtrConnectionName }}
           dtrRepository: ${{ env.dtrRepository }}
           tagSuffix: '-dev'
