@@ -1,0 +1,97 @@
+name: azuretogithub
+
+on:
+  push:
+    branches:
+      - '*'
+  workflow_dispatch:
+    inputs:
+      cypressVersions:
+        description: 'Cypress Versions'
+        type: object
+        default: '7.2.0'
+
+env:
+  poolNameLnx: "OP-US-S-AzureDevOps-Lnx"
+  dtrConnectionName: "docker-dtr-dev.ntrs.com"
+  dtrRepository: "azure-devops/node"
+  dockerBuildArgs: "--build-arg http_proxy=http://http-proxy.ntrs.com:80 --build-arg https_proxy=http://http-proxy.ntrs.com:443"
+
+
+jobs:
+  nodeVerionsWithCypress:
+      name: "Node Linux"
+      runs-on: ${{ poolNameLnx }}
+      strategy:
+        matrix:
+          nodeVerionsWithCypress: [12, 14]
+      steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: not master build-steps.yml
+        if: ${{ github.ref != 'ref/heads/master' }}
+        uses: ./.az/build-steps.yml
+        with:
+          dtrConnectionName: ${{ dtrConnectionName }}
+          dtrRepository: ${{ dtrRepository }}
+          tagSuffix: '-dev'
+          dockerBuildArgs: ${{ dockerBuildArgs }}
+          cypressVersions: ${{ matrix.nodeVerionsWithCypress }}
+          nodeVersion: ${{ nodeVersion }}
+       
+         
+      - name: master build-steps.yml
+        if: ${{ github.ref == 'ref/heads/master' }}
+        uses: ./.az/build-steps.yml
+        with:
+          dtrConnectionName: ${{ dtrConnectionName }}
+          dtrRepository: ${{ dtrRepository }}
+          dockerBuildArgs: ${{ dockerBuildArgs }}
+          cypressVersions: ${{ github.event.inputs.cypressVersions }}
+          nodeVersion: ${{ nodeVersion }}
+
+      - name: push-steps.yml
+        if: ${{ github.ref == 'ref/heads/master' }}
+        uses: ./.az/push-steps.yml
+        with:
+            dtrConnectionName: ${{ dtrConnectionName }}
+            dtrRepository: ${{ dtrRepository }}
+            cypressVersions: ${{ github.event.inputs.cypressVersions }}
+            nodeVersion: ${{ nodeVersion }}
+
+  nodeVerionsWithoutCypress:
+      name: "Node linux"
+      runs-on: ${{ poolNameLnx }}
+      strategy:
+        matrix:
+          nodeVerionsWithoutCypress: [16]
+      steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: not master push-steps.yml
+        if: ${{ github.ref != 'ref/heads/master' }}
+        uses: ./.az/build-steps.yml
+        with:
+          dtrConnectionName: ${{ dtrConnectionName }}
+          dtrRepository: ${{ dtrRepository }}
+          tagSuffix: '-dev'
+          dockerBuildArgs: ${{ dockerBuildArgs }}
+          nodeVersion: ${{ nodeVersion }}
+         
+      - name: master push-steps.yml
+        if: ${{ github.ref == 'ref/heads/master' }}
+        uses: ./.az/build-steps.yml
+        with:
+          dtrConnectionName: ${{ dtrConnectionName }}
+          dtrRepository: ${{ dtrRepository }}
+          dockerBuildArgs: ${{ dockerBuildArgs }}
+          nodeVersion: ${{ nodeVersion }}
+         
+      - name: push-steps.yml
+        if: ${{ github.ref == 'ref/heads/master' }}
+        uses: ./.az/push-steps.yml
+        with:
+           dtrConnectionName: ${{ dtrConnectionName }}
+           dtrRepository: ${{ dtrRepository }}
+           nodeVersion: ${{ nodeVersion }}
