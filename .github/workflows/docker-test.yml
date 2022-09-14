@@ -95,3 +95,69 @@ jobs:
            dtrConnectionName: ${{ dtrConnectionName }}
            dtrRepository: ${{ dtrRepository }}
            nodeVersion: ${{ nodeVersion }}
+           
+           
+           
+           dtrConnectionName: ${{ env.dtrConnectionName }}
+          dtrRepository: ${{ env.dtrRepository }}
+          tagSuffix: '-dev'
+          dockerBuildArgs: $dockerBuildArgs
+          cypressVersions: ${{ matrix.nodeVerionsWithCypress }}
+          nodeVersion: ${{ env.nodeVersion }}
+       
+         
+      - name: master build-steps.yml
+        if: ${{ github.ref == 'ref/heads/master' }}
+        uses: ./.az/build-steps.yml
+        with:
+          dtrConnectionName: ${{ env.dtrConnectionName }}
+          dtrRepository: ${{ env.dtrRepository }}
+          dockerBuildArgs: ${{ env.dockerBuildArgs }}
+          cypressVersions: ${{ github.event.inputs.cypressVersions }}
+          nodeVersion: ${{ env.nodeVersion }}
+
+      - name: push-steps.yml
+        if: ${{ github.ref == 'ref/heads/master' }}
+        uses: ./.az/push-steps.yml
+        with:
+            dtrConnectionName: ${{ env.dtrConnectionName }}
+            dtrRepository: ${{ env.dtrRepository }}
+            cypressVersions: ${{ github.event.inputs.cypressVersions }}
+            nodeVersion: ${{ env.nodeVersion }}
+
+  nodeVerionsWithoutCypress:
+      name: "Node linux"
+      runs-on: $poolNameLnx
+      strategy:
+        matrix:
+          nodeVerionsWithoutCypress: [16]
+      steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: not master push-steps.yml
+        if: ${{ github.ref != 'ref/heads/master' }}
+        uses: ./.az/build-steps.yml
+        with:
+          dtrConnectionName: ${{ env.dtrConnectionName }}
+          dtrRepository: ${{ env.dtrRepository }}
+          tagSuffix: '-dev'
+          dockerBuildArgs: ${{ env.dockerBuildArgs }}
+          nodeVersion: ${{ env.nodeVersion }}
+         
+      - name: master push-steps.yml
+        if: ${{ github.ref == 'ref/heads/master' }}
+        uses: ./.az/build-steps.yml
+        with:
+          dtrConnectionName: ${{ env.dtrConnectionName }}
+          dtrRepository: ${{ env.dtrRepository }}
+          dockerBuildArgs: ${{ env.dockerBuildArgs }}
+          nodeVersion: ${{ env.nodeVersion }}
+         
+      - name: push-steps.yml
+        if: ${{ github.ref == 'ref/heads/master' }}
+        uses: ./.az/push-steps.yml
+        with:
+           dtrConnectionName: ${{ env.dtrConnectionName }}
+           dtrRepository: ${{ env.dtrRepository }}
+           nodeVersion: ${{ env.nodeVersion }}
