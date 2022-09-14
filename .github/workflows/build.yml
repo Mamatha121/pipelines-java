@@ -1,0 +1,39 @@
+name: "build.xml file"
+
+on:
+  push:
+    branches:
+    - main
+  inputs:
+    dtrConnectionName:
+      required: true
+    dtrRepository:
+      required: true
+    tagSuffix:
+      required: true
+    dockerBuildArgs:
+      required: true
+    nodeVersion:
+      required: true
+    cypressVersions:
+      required: true
+jobs:
+  steps:
+    - uses: actions/checkout@v2
+    - name: Docker Login
+      uses: azure/docker-login@v1
+      with:
+        login-server: ''
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+    - name: Build Base Node Image
+      run: |
+        docker build --file '${{ inputs.nodeVersion }}/Dockerfile' '$(Build.SourcesDirectory)' ${{ inputs.dtrConnectionName }} ${{ inputs.dtrRepository }} '${{ inputs.dockerBuildArgs }} --pull --build-arg "NODE_VERSION=${{ parameters.nodeVersion }}"' --tags ${{ parameters.nodeVersion }}-$(Build.BuildId)${{ inputs.tagSuffix }} ${{ inputs.nodeVersion }}${{ inputs.tagSuffix }}
+                   
+    - name: Build Base Node Image with Browsers
+      run: |
+        docker build --file '${{ inputs.nodeVersion }}/browsers/Dockerfile' '$(Build.SourcesDirectory)' {{ inputs.dtrConnectionName }} ${{ inputs.dtrRepository }} '${{ inputs.dockerBuildArgs }} --build-arg "TAG_SUFFIX=${{ inputs.tagSuffix }}" --build-arg "NODE_VERSION=${{ inputs.nodeVersion }}"' --tags ${{ inputs.nodeVersion }}-browsers-$(Build.BuildId)${{ inputs.tagSuffix }} ${{ inputs.nodeVersion }}-browsers${{ inputs.tagSuffix }}
+       
+    - name: Build Cypress Image
+      run: |
+       docker build --file '${{ inputs.nodeVersion }}/cypress/Dockerfile' '$(Build.SourcesDirectory)' ${{ inputs.dtrConnectionName }} ${{ inputs.dtrRepository }} '${{ inputs.dockerBuildArgs }} --build-arg "TAG_SUFFIX=${{ inputs.tagSuffix }}" --build-arg "CYPRESS_VERSION=${{ cypressVersion }}" --build-arg "NODE_VERSION=${{ inputs.nodeVersion }}"' --tags ${{ inputs.nodeVersion }}-cypress-${{ cypressVersion }}-$(Build.BuildId)${{ inputs.tagSuffix }} ${{ inputs.nodeVersion }}-cypress-${{ cypressVersion }}${{ inputs.tagSuffix }}
