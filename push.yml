@@ -1,0 +1,48 @@
+parameters:
+  - name: dtrConnectionName
+    type: string
+    default: ''
+  - name: dtrRepository
+    type: string
+    default: ''
+  - name: tagSuffix
+    type: string
+    default: ''
+  - name: nodeVersion
+    type: string
+    default: ''
+  - name: cypressVersions
+    type: object
+    default: []
+
+steps:
+  - task: Docker@2
+    displayName: "Push Base Node Image"
+    inputs:
+      containerRegistry: ${{ parameters.dtrConnectionName }}
+      repository: ${{ parameters.dtrRepository }}
+      command: 'push'
+      tags: |
+        ${{ parameters.nodeVersion }}-$(Build.BuildId)${{ parameters.tagSuffix }}
+        ${{ parameters.nodeVersion }}${{ parameters.tagSuffix }}
+
+  - task: Docker@2
+    displayName: "Push Node Image with Browsers"
+    inputs:
+      containerRegistry: ${{ parameters.dtrConnectionName }}
+      repository: ${{ parameters.dtrRepository }}
+      command: 'push'
+      tags: |
+        ${{ parameters.nodeVersion }}-browsers-$(Build.BuildId)${{ parameters.tagSuffix }}
+        ${{ parameters.nodeVersion }}-browsers${{ parameters.tagSuffix }}
+
+  - ${{ each cypressVersion in parameters.cypressVersions }}:
+    - task: Docker@2
+      displayName: "Push Cypress Image"
+      inputs:
+        containerRegistry: ${{ parameters.dtrConnectionName }}
+        repository: ${{ parameters.dtrRepository }}
+        command: 'push'
+        tags: |
+          ${{ parameters.nodeVersion }}-cypress-${{ cypressVersion }}-$(Build.BuildId)${{ parameters.tagSuffix }}
+          ${{ parameters.nodeVersion }}-cypress-${{ cypressVersion }}${{ parameters.tagSuffix }}
