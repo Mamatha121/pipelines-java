@@ -1,0 +1,60 @@
+parameters:
+  - name: dtrConnectionName
+    type: string
+    default: ''
+  - name: dtrRepository
+    type: string
+    default: ''
+  - name: tagSuffix
+    type: string
+    default: ''
+  - name: dockerBuildArgs
+    type: string
+    default: ''
+  - name: nodeVersion
+    type: string
+    default: ''
+  - name: cypressVersions
+    type: object
+    default: []
+
+steps:
+  - task: Docker@2
+    displayName: "Build Base Node Image"
+    inputs:
+      containerRegistry: ${{ parameters.dtrConnectionName }}
+      repository: ${{ parameters.dtrRepository }}
+      command: 'build'
+      Dockerfile: '${{ parameters.nodeVersion }}/Dockerfile'
+      arguments: '${{ parameters.dockerBuildArgs }} --pull --build-arg "NODE_VERSION=${{ parameters.nodeVersion }}"'
+      buildContext: '$(Build.SourcesDirectory)'
+      tags: |
+        ${{ parameters.nodeVersion }}-$(Build.BuildId)${{ parameters.tagSuffix }}
+        ${{ parameters.nodeVersion }}${{ parameters.tagSuffix }}
+
+  - task: Docker@2
+    displayName: "Build Node Image with Browsers"
+    inputs:
+      containerRegistry: ${{ parameters.dtrConnectionName }}
+      repository: ${{ parameters.dtrRepository }}
+      command: 'build'
+      Dockerfile: '${{ parameters.nodeVersion }}/browsers/Dockerfile'
+      buildContext: '$(Build.SourcesDirectory)'
+      arguments: '${{ parameters.dockerBuildArgs }} --build-arg "TAG_SUFFIX=${{ parameters.tagSuffix }}" --build-arg "NODE_VERSION=${{ parameters.nodeVersion }}"'
+      tags: |
+        ${{ parameters.nodeVersion }}-browsers-$(Build.BuildId)${{ parameters.tagSuffix }}
+        ${{ parameters.nodeVersion }}-browsers${{ parameters.tagSuffix }}
+
+  - ${{ each cypressVersion in parameters.cypressVersions }}:
+    - task: Docker@2
+      displayName: "Build Cypress Image"
+      inputs:
+        containerRegistry: ${{ parameters.dtrConnectionName }}
+        repository: ${{ parameters.dtrRepository }}
+        command: 'build'
+        Dockerfile: '${{ parameters.nodeVersion }}/cypress/Dockerfile'
+        buildContext: '$(Build.SourcesDirectory)'
+        arguments: '${{ parameters.dockerBuildArgs }} --build-arg "TAG_SUFFIX=${{ parameters.tagSuffix }}" --build-arg "CYPRESS_VERSION=${{ cypressVersion }}" --build-arg "NODE_VERSION=${{ parameters.nodeVersion }}"'
+        tags: |
+          ${{ parameters.nodeVersion }}-cypress-${{ cypressVersion }}-$(Build.BuildId)${{ parameters.tagSuffix }}
+          ${{ parameters.nodeVersion }}-cypress-${{ cypressVersion }}${{ parameters.tagSuffix }}
